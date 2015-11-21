@@ -1,0 +1,61 @@
+#!/usr/bin/env php
+<?
+
+class importer {
+  private $docPathName, $schemaPathName, $option, $parm;
+  public function __construct() {
+    global $argv;
+    if(!isset($argv[1], $argv[2])) die('Use excel-importer excel.xls schema.json (-pick LineNumber(f.e. G3) | -raw LineNumber(f.e. G3)) | -line Line' . PHP_EOL);
+
+    $this->docPathName = $argv[1];
+    $path = pathinfo($this->docPathName, PATHINFO_DIRNAME);
+    if ($path[0] != '/') $this->docPathName = getcwd() .'/'. $this->docPathName;
+    if (!file_exists($this->docPathName)) die("Excel file {$this->docPathName} not exists");
+
+    $this->schemaPathName = $argv[2];
+    $path = pathinfo($this->schemaPathName, PATHINFO_DIRNAME);
+    if ($path[0] != '/') $this->schemaPathName = getcwd() .'/'. $this->schemaPathName;
+    if (!file_exists($this->schemaPathName)) die("Schema file {$this->schemaPathName} not exists");
+
+    $this->option = isset($argv[3]) ? trim($argv[3]) : null;
+    $this->parm = isset($argv[4]) ? trim($argv[4]) : null;
+
+    require(__DIR__.'/lib/application.php');
+    PApplication::init();
+    require(PFactory::getDir().'/extend/phpexcel/PHPExcel.php');
+    }
+
+  public function run() {
+    error_reporting(E_ALL);
+
+    require(PFactory::getDir().'/tools/excel-importer/ExcelSchema.php');
+    require(PFactory::getDir().'/tools/excel-importer/ExcelImporter.php');
+    require(PFactory::getDir().'/tools/excel-importer/ExcelSaver.php');
+
+    $schema = new ExcelSchema($this->schemaPathName);
+    $importer = new ExcelImporter();
+
+    $importer->setSchema($schema);
+    $importer->load($this->docPathName);
+    switch($this->option) {
+      case '-pick':
+         $importer->pick($this->parm);
+        break;
+      case '-line':
+         $importer->line($this->parm);
+        break;
+      case '-raw':
+         $importer->raw($this->parm);
+        break;
+      default:
+        $importer->import();
+        echo 'Finished';
+    }
+
+
+    echo PHP_EOL.PHP_EOL;
+    }
+  }
+
+$importer = new importer();
+$importer->run();

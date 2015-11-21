@@ -1,0 +1,25 @@
+#!/bin/bash
+
+cd $(dirname $(readlink -f $0))
+source config/db
+
+ALL_PROJECTS_DIR='/var/www/apps/'
+dbname='dev_test'
+
+cd $ALL_PROJECTS_DIR
+find . -maxdepth 1 -type d -print0 | while read -d $'\0' dir; do
+  PROJECT_DIR=$ALL_PROJECTS_DIR$dir'/www'
+  if [ -d $PROJECT_DIR ]; then
+    cd $PROJECT_DIR
+      P_BRANCH=`git rev-parse --abbrev-ref HEAD 2>&1`
+      if [ "$?" = "0" ]; then
+        P_SHA1=`git rev-parse HEAD`
+        P_NAME=`echo $dir | cut -d "/" -f 2`
+        query="CALL WDI_INSERT('$P_NAME', '$P_BRANCH', '$P_SHA1')"
+        mysql -s -N -u$dbuser -p$dbpass -h$dbhost $dbname -e "$query"
+      fi
+  fi
+
+done
+
+~/bin/lib/tools/whodoit/aggregate.php

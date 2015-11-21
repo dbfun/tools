@@ -1,0 +1,17 @@
+#/bin/sh
+
+MASK="$1"
+if [ -z "$MASK" ]; then
+  echo "Mask is empty. Use iconvcp1251 '*.html'"
+  exit 1
+fi
+
+
+for i in $MASK; do
+  if [ -f $i ]
+    then
+      iconv -f cp1251 -t utf-8 $i -o $i.utf
+    mv $i.utf $i
+  fi
+done
+

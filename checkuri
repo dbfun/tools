@@ -1,0 +1,36 @@
+#!/bin/bash
+if [ -z "$1" ] || [ -z "$2" ]; then
+  echo "URI is empty. Use checkuri URI EMAIL"
+  exit 1
+fi
+
+URI=$1
+EMAIL=$2
+
+function getcode () {
+  URI=$1
+  RESPONSE=`curl -s --connect-timeout 5 --head "$URI"|grep HTTP`
+  HTTP_CODE=`expr match "$RESPONSE" '.*\([0-9]\{3\}\)'`
+}
+
+function sendmail () {
+  URI=$1
+  EMAIL=$2
+  SUBJECT="Page $URI is available now"
+  FROM="$EMAIL"
+  RECIPIENTS="$EMAIL"
+  MESSAGE="Page $URI change HTTP status"
+  MAIL="Subject:$SUBJECT\nFrom: $FROM\nTo: $RECIPIENTS\n\n$MESSAGE"
+  echo -e "$MAIL" | /usr/sbin/sendmail -f "$FROM" "$RECIPIENTS"
+}
+
+getcode "$URI"
+INIT_HTTP_CODE=$HTTP_CODE
+echo "Init HTTP status is '$INIT_HTTP_CODE'"
+while [ "$HTTP_CODE" = "$INIT_HTTP_CODE" ]
+  do
+    sleep 60
+    getcode "$URI"
+  done
+sendmail "$URI" "$EMAIL"
+echo "Page $URI change HTTP status. Email sended"

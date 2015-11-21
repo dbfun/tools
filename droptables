@@ -1,0 +1,30 @@
+#!/bin/bash
+dbname=$1
+if [ -z "$dbname" ]; then
+  echo "Database is empty. Use droptables database"
+  exit 1
+fi
+
+cd $(dirname $(readlink -f $0))
+source config/db
+
+function getTables() {
+  query="SHOW TABLES FROM \`$1\`"
+  results=`mysql -s -N -u$dbuser -p$dbpass -h$dbhost -e "$query"`
+  }
+  
+getTables $1
+
+read -p "Are you sure? (yes/no)" -e input
+
+if [ "$input" == 'yes' ]; then
+  for onetable in $results; do
+    query="DROP TABLE $dbname.$onetable"
+    mysql -s -N -u$dbuser -p$dbpass -h$dbhost -e "$query"
+  done
+  echo "TABLES DROPPED"
+  exit 0
+else
+  echo "Break"
+  exit 1
+fi

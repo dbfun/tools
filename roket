@@ -1,0 +1,54 @@
+#!/bin/bash
+
+if [ ! -d ./tmp ]; then
+  echo "Change directory to project dir!"; 
+  exit 1;
+fi
+
+maxcommits=15
+
+function isNumber() {
+  re='^[0-9]+$'
+  if ! [[ $1 =~ $re ]] ; then
+    return 0
+  else
+    return 1
+  fi
+  }
+
+echo 'HEAD~x	INFORMATION'
+echo '------	-----------'
+echo '0	current working directory'
+for i in $(seq 0 $[$maxcommits-1]); do
+  commit=`git log --pretty=format:"%h - %ar%x09%an%x09%s" -n1 --skip=$i`
+  echo "$[$i+1]	$commit"
+  done
+
+read -p "Select number HEAD~" -e headcount
+isNumber $headcount
+
+if [ "$?" == "0" ]; then
+  echo "No number!"
+  exit 1
+  fi
+  
+dir="./tmp/patches/$headcount"
+
+if [ -d "$dir" ]; then
+  echo "Patch is already exits!"; 
+  exit 1;
+fi
+
+git diff HEAD~$headcount --stat
+
+read -p "Make patch? (yes/no)" -e confirm
+
+if [ "$confirm" == 'yes' ]; then
+  mkdir -p $dir || { echo "Can not create dir $dir"; exit 1; }
+  cp --parents `git diff HEAD~$headcount --name-only` $dir
+  echo "The patch was created in $dir"
+  exit 0
+else
+  echo "Break"
+  exit 1
+fi

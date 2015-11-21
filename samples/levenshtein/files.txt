@@ -1,0 +1,5 @@
+image/logos/l-air-liquide.gif
+image/logos/l-hayat.gif
+image/logos/l-ikea.gif
+image/logos/l-isuzu.gif
+image/logos/l-indykpol.gif

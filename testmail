@@ -1,0 +1,42 @@
+#!/bin/bash
+if [ -z "$1" ]; then
+  echo "Mail is empty. Use testmail domain.com"
+  exit 1
+fi
+
+cd $(dirname $(readlink -f $0))
+
+DOMAIN=$1
+
+IP=`host $DOMAIN | awk '/has address/ { print $4 }'`
+
+SPF=`dig $DOMAIN TXT +answer +short | grep spf`
+
+MX=`dig $DOMAIN MX +answer +short`
+
+PTR=`dig -x $IP PTR +answer +short`
+
+echo
+echo host:
+echo -e '\t' $IP
+
+echo
+echo MX:
+echo -e '\t' $MX
+
+
+echo
+echo spf:
+echo -e '\t' $SPF
+
+echo
+echo dig -x $IP PTR:
+echo -e '\t' $PTR
+
+echo
+if [ -z "$SPF" ]; then
+  echo WARNING: No SPF found!
+else
+  SPF_CHECK=`./lib/tools/testmail/spfcheck.php $IP "$SPF"`
+  echo $SPF_CHECK
+fi

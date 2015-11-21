@@ -1,0 +1,9 @@
+#!/bin/bash
+
+P_BRANCH=`git rev-parse --abbrev-ref HEAD 2>&1`
+if [ "$?" = "0" ]; then
+  git status --porcelain | cut -c4- | xargs stat -c"%z %U"
+else
+  echo 'Not in Git repository!'
+  exit 1
+fi

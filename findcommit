@@ -1,0 +1,44 @@
+#!/bin/bash
+
+FILENAME=$1
+TEXT=$2
+
+if [ -z "$FILENAME" ]; then
+    echo 'Last commit search by text'
+    echo 'Usage: findcommit file "text"'
+    exit 1
+fi
+
+if [ -z "$TEXT" ]; then
+    echo "Key word is empty"
+    exit 2
+fi
+
+if [ ! -f "$FILENAME" ]; then
+    echo "File not exists"
+    exit 3
+fi
+
+GIT_BLAME=`git blame "$FILENAME"`
+if [ 0 != "$?" ]; then
+    echo 'Not commited yet'
+    exit 4
+fi
+
+GIT_BLAME_LINE=`echo "$GIT_BLAME"|grep "$TEXT" -m 1`
+if [ -z "$GIT_BLAME_LINE" ]; then
+    echo "Key word not found"
+    exit 5
+fi
+   
+commit=`echo $GIT_BLAME_LINE |sed 's/^\([A-Za-z0-9]*\).*/\1/'`
+if [ -z "$commit" ] || [ "$commit" == '00000000' ]; then 
+    echo 'Not found'
+    exit 6
+fi
+echo
+echo -e "\033[36m\033[4m$GIT_BLAME_LINE\033[0m"
+echo `git show $commit -s --pretty=format:"Commiter: %cn%nDate: %ci%nSubject: %s"`
+echo
+    
+    

@@ -1,0 +1,20 @@
+#!/bin/bash
+
+echo "Are you sure (y/n): "
+  read confirm
+  if [ "$confirm" != "y" ]; then
+  exit 1
+fi
+
+echo 'Begin'
+startSize=$(du -s|sed 's/^\([A-Za-z0-9]*\).*/\1/')
+
+find . -name '*.[Pp][Nn][Gg]' -type f -print0 | xargs -0 optipng -o5 -quiet -preserve > /dev/null
+find . -name '*.[Gg][Ii][Ff]' -type f -print0 | xargs -0 gifsicle --careful -w -b -O2 > /dev/null
+find . -name '*.[Jj][Pp][Gg]' -type f -print0 | xargs -0 jpegoptim --strip-all > /dev/null
+find . -name '*.[Jj][Pp][Ee][Gg]' -type f -print0 | xargs -0 jpegoptim --strip-all > /dev/null
+
+endSize=$(du -s|sed 's/^\([A-Za-z0-9]*\).*/\1/')
+echo Start size: $startSize
+echo End size: $endSize
+echo Compression: $[(startSize-endSize)*100/startSize]%

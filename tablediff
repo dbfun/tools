@@ -1,0 +1,62 @@
+#!/usr/bin/env php
+<?
+
+class Tablediffer {
+
+  private $db, $table1, $table2;
+  public function __construct() {
+    global $argv;
+    if(!isset($argv[1], $argv[2], $argv[3])) die('Use tablediff database table1 table2' . PHP_EOL);
+
+    require(__DIR__.'/lib/application.php');
+    PApplication::init();
+
+    $this->db = PFactory::getDbo($argv[1]);
+
+    $this->table1 = $argv[2];
+    $this->table2 = $argv[3];
+  }
+
+  public static function compare($a, $b) {
+    return count(array_diff_assoc($a, $b)) == 0 ? 0 : 1;
+  }
+
+  public function run() {
+    $query = "SELECT * FROM `".addslashes($this->table1)."`";
+    $rows1 = $this->db->SelectSet($query);
+
+    $query = "SELECT * FROM `".addslashes($this->table2)."`";
+    $rows2 = $this->db->SelectSet($query);
+
+    // $diff = array_udiff_assoc($rows1, $rows2, array("self", "compare"));  echo var_dump($diff) . PHP_EOL;
+    echo 'TABLE 1:' . PHP_EOL;
+    foreach($rows1 as $key1 => $arr1) {
+      if(!isset($rows2[$key1])) echo var_dump($arr1);
+    }
+
+    echo 'TABLE 2:' . PHP_EOL;
+    foreach($rows2 as $key2 => $arr2) {
+      if(!isset($rows1[$key2])) echo var_dump($arr2);
+    }
+
+    echo 'CHANGED:' . PHP_EOL;
+    $chCount = 0;
+
+    foreach($rows1 as $key1 => $arr1) {
+      if(isset($rows2[$key1])) {
+        $diff = array_diff_assoc($arr1, $rows2[$key1]);
+        if(count($diff) > 0) {
+          $chCount++;
+          echo var_dump($diff);
+        }
+      }
+    }
+
+    echo "Total: changed - {$chCount}";
+  }
+
+}
+
+$tablediffer = new Tablediffer();
+$tablediffer->run();
+

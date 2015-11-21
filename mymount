@@ -1,0 +1,52 @@
+#!/bin/bash
+
+PROJECT=$1
+OPTION=$2
+cd $(dirname $(readlink -f $0))
+PROJECT_MNT_PATH=~/mnt/$PROJECT
+
+if [ -z "$PROJECT" ]; then
+    echo 'Usage: mymount project'
+    exit 1
+fi
+
+if [ ! -f "config/projects" ]; then
+    echo "No projects profiles"
+    exit 2
+fi
+
+case "$OPTION" in
+    -u)
+        fusermount -u -z $PROJECT_MNT_PATH
+        rmdir $PROJECT_MNT_PATH
+        exit 0
+        ;;
+    *)
+        if [ -d "$PROJECT_MNT_PATH" ]; then
+            NOT_MOUNTPOINT=`mountpoint "$PROJECT_MNT_PATH" | grep 'is not a mountpoint'`
+            if [ -z "$NOT_MOUNTPOINT" ]; then
+                echo "Project already mounted $PROJECT_MNT_PATH"
+                exit 3
+            else
+                echo "Reconnect..."
+            fi
+        fi
+        source config/projects
+
+        if [ -z "${PROFILE[$PROJECT]}" ]; then
+            echo "No such project profile"
+            exit 4
+        fi
+
+        _UID=`id -u`
+        _GID=`id -g`
+        mkdir -p $PROJECT_MNT_PATH
+        sshfs -o reconnect -o idmap=user -o uid=$_UID -ogid=$_GID -o allow_other "${PROFILE[$PROJECT]}" $PROJECT_MNT_PATH
+          if [ 0 != "$?" ]; then
+            echo 'Error'
+            rmdir $PROJECT_MNT_PATH
+            exit 5
+          fi
+        exit 0
+        ;;
+esac

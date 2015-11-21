@@ -1,0 +1,2 @@
+declare -A PROFILE
+PROFILE[test]='test@test.ru:/home/test/test.ru'

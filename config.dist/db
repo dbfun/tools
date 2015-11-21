@@ -1,0 +1,4 @@
+dbhost=localhost
+dbpass=password
+dbuser=user
+dbname=dev_test

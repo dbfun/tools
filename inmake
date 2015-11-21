@@ -1,0 +1,17 @@
+#!/bin/bash
+CURRENT=`pwd`
+
+if [ $# == 0 ]; then
+  echo 'Usage: inmake [DIR...]'
+  exit 1
+fi
+
+inotifywait -mqr  --timefmt '%T' --format '%f %T' -e close_write --exclude '^\..*\.sw[px]*$|4913|~$' $@ | while read file date; do
+  if [[ "$file" =~ \. ]]; then
+    echo $file $ev
+    printf '\033[33m%*s\033[0m\n' `tput cols` ' ' | tr ' ' '-'
+    echo -e "\033[32m$date:\033[34m make\033[0m"
+    make
+  fi
+done
+

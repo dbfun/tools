@@ -1,0 +1,11 @@
+#!/bin/bash
+
+for f in *.[Pp][Nn][Gg]; do
+  optipng -o5 -quiet -preserve "$f" > /dev/null
+  done
+
+gifsicle -b -O2 *.[Gg][Ii][Ff] > /dev/null
+
+for f in *.[Jj][Pp]{E,e,}[Gg]; do
+  jpegoptim --strip-all "$f" > /dev/null
+  done

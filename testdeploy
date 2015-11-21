@@ -1,0 +1,20 @@
+#!/bin/bash
+PROJECT=$1
+echo "Размещение проекта: $PROJECT"
+
+cd $(dirname $(readlink -f $0))
+source config/db
+
+cd /var/www/$PROJECT || { echo "Такого проекта нет"; exit 1; }
+echo "Вы уверены (y/n): "
+read confirm
+if [ "$confirm" != "y" ]; then
+  exit 1
+fi
+pname=${PROJECT//-/_};
+dbname="dev_"${pname}
+
+mysqldump -h$dbhost -u$dbuser -p$dbpass $dbname --routines > db.sql
+tar -czf arch.tar.gz etc/ var/ www/ db.sql
+scp arch.tar.gz user@machine.ru:/var/www/$PROJECT
+rm db.sql arch.tar

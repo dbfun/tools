@@ -1,0 +1,8 @@
+#!/bin/bash
+if [ -z "$1" ]; then
+  echo "URI is empty. Use getsite URI"
+  exit 1
+fi
+mkdir -p ~/tmp/sites
+cd ~/tmp/sites
+wget -r -l 10 -k $1

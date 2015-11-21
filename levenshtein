@@ -1,0 +1,120 @@
+#!/usr/bin/env php
+<?
+
+class levenshteinCombine {
+
+  private $filesOptions = array();
+  public function __construct() {
+    global $argv;
+    if(!isset($argv[1], $argv[2])) die(
+      "Use levenshtein file-key [-option] file-value-1 [-option] (...)\nExample: levenshtein samples/levenshtein/weblinks.txt samples/levenshtein/files.txt -file"
+      );
+    
+    $this->init();
+    
+    $i = 0;
+    foreach ($argv as $key => $param) {
+      if ($key == 0) continue;
+      switch (true) {
+        case $param[0] == '-': // option
+          $this->filesOptions[$i]->option = $param;
+          break;
+        default: // file
+          $path = pathinfo($param, PATHINFO_DIRNAME);
+          if ($path[0] != '/') $param = getcwd() .'/'. $param;
+          if (!file_exists($param)) die("File {$param} not exists");
+          $i++;
+          $this->filesOptions[$i] = new stdClass();
+          $this->filesOptions[$i]->name = $param;
+        }
+      }
+    foreach ($this->filesOptions as &$fileOption) { // TODO many options
+      $lines = file($fileOption->name);
+        foreach ($lines as &$line) {
+          $line = trim($line);
+          $_line = $line;
+          if (isset($fileOption->option)) switch ($fileOption->option) {
+            case '-file':
+              $line = pathinfo($line, PATHINFO_FILENAME);
+              break;            
+            case '-link':
+              $line = preg_replace('#https?:\/\/#', '', $line); // protocol
+              $line = preg_replace('#\.[^.]+$#', '', $line); // first level domain
+              break;
+            default:
+            }
+          $line = array('src' => $_line, 'txt' => $line);
+          }
+        unset($line);
+      $fileOption->lines = $lines;
+      }
+    }
+  
+  private $db;
+  private function init() {
+    require(__DIR__.'/lib/application.php');
+    PApplication::init();
+    $this->db = PFactory::getDbo('dev_test');
+    }
+    
+  public function run() {
+    
+    $keys = array_slice($this->filesOptions, 0, 1);
+    $keys = $keys[0];
+    $valuesArray = array_slice($this->filesOptions, 1);
+    
+    $this->db->Query("DROP TABLE IF EXISTS `keys`");
+    $this->db->Query("DROP TABLE IF EXISTS `values`");
+    
+    $this->db->Query("CREATE TEMPORARY TABLE `keys` (`id` INT(11) NOT NULL AUTO_INCREMENT, `src` VARCHAR(255) NOT NULL, `txt` VARCHAR(255) NOT NULL, PRIMARY KEY(`id`)) Engine=MyISAM");
+    $this->db->Query("CREATE TEMPORARY TABLE `values` (`id` INT(11) NOT NULL AUTO_INCREMENT,`src` VARCHAR(255) NOT NULL, `txt` VARCHAR(255) NOT NULL, PRIMARY KEY(`id`)) Engine=MyISAM");
+    
+    foreach($keys->lines as $keyLine) {
+      $this->db->Query("INSERT INTO `keys` VALUES(DEFAULT, '".addslashes($keyLine['src'])."', '".addslashes($keyLine['txt'])."')");
+      }
+    foreach($valuesArray as $valuesNumber => $values) {
+      foreach($values->lines as $valueLine) {
+        $this->db->Query("INSERT INTO `values` VALUES(DEFAULT, '".addslashes($valueLine['src'])."', '".addslashes($valueLine['txt'])."')");
+        }
+      $query = "SELECT * FROM(
+        SELECT keys.id AS `keys_id`, values.id AS `values_id`, keys.src AS `keys_src`, values.src AS `values_src`, LEVENSHTEIN(keys.txt, values.txt) AS `score`
+        FROM `keys`
+        CROSS JOIN `values`
+        ORDER BY keys.id, score
+        ) AS `alias` GROUP BY `keys_id`";
+      $resultsRows = $this->db->SelectSet($query);
+      foreach($resultsRows as $row) {
+        echo "'{$row['keys_src']}', '{$row['values_src']}'".PHP_EOL;
+        }
+      $this->db->Query("TRUNCATE `values`");
+      }
+      
+    
+    // 
+    /*
+    $ret = array();
+    foreach($keys->lines as $keyNum => $keyLine) {
+      $ret[$keyNum] = new stdClass();
+      $ret[$keyNum]->key = $keyLine['src'];
+      $ret[$keyNum]->levenshtein = array();
+    
+      foreach($valuesArray as $values) {
+        foreach($values->lines as $valueLine) {
+          // echo $keyLine['txt'].'-'.$valueLine['txt'].PHP_EOL;
+          //$ret[$keyNum]->levenshtein
+          levenshtein($keyLine['txt'], $valueLine['txt'])
+          }
+        }
+      }
+    */
+    // die(var_dump($keys));
+    
+    }
+  
+  }
+  
+$levenshteinCombine = new levenshteinCombine();
+$levenshteinCombine->run();
+
+
+//echo levenshtein ('l-hygiene-technologies.gif', 'Hygiene technologies').PHP_EOL;

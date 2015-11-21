@@ -1,0 +1,6 @@
+function addslashes() {
+  addslashes=`echo "$1" | sed "s/'/\\\\'/g"`
+  }
+function md5() {
+  md5=`echo -n "$1" | /usr/bin/md5sum | cut -f1 -d" "`
+  }

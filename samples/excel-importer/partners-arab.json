@@ -1,0 +1,50 @@
+  {
+  "saver": {
+    "type": "DBSaver",
+    "options": {"table": "partners_sa", "SQL_beforeSaveBegin": "TRUNCATE TABLE `partners_sa`", "SQL_afterSave": "UPDATE `partners_sa` SET `is_active` = 1;"}
+    },
+  "rowStart": "2",
+  "rowEndControl": "A",
+  "fields": [
+    {
+      "cell": "A",
+      "col": "name",
+      "type": "string"
+    },
+    {
+      "cell": "B",
+      "col": "description",
+      "type": "string"
+    },
+    {
+      "cell": "C",
+      "col": "director",
+      "type": "string"
+    },
+    {
+      "cell": "D",
+      "col": "address",
+      "type": "string"
+    },
+    {
+      "cell": "E",
+      "col": "website",
+      "type": "string"
+    },
+    {
+      "cell": "F",
+      "col": "email",
+      "type": "string"
+    },
+    {
+      "cell": "G",
+      "col": "tel",
+      "type": "string"
+    },
+    {
+      "cell": "H",
+      "col": "fax",
+      "type": "string"
+    }
+  ]
+}
