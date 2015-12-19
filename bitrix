@@ -1,0 +1,174 @@
+#!/usr/bin/php
+<?php
+
+class BABitrixCli {
+
+  private $argv;
+  public function __construct() {
+    global $argv;
+    $this->argv = $argv;
+    if(!isset($this->argv[1])) {
+      $this->help();
+    }
+    $this->dir = getcwd();
+  }
+
+  public function run() {
+    try {
+      switch ($this->argv[1]) {
+        case 'help':
+          $this->help();
+          break;
+        case 'error':
+          $this->error();
+          break;
+        case 'db':
+          $this->db();
+          break;
+        case 'show':
+          $this->show();
+          break;
+        case 'components':
+          $this->components();
+          break;
+        default:
+          $this->help();
+      }
+    } catch (Exception $e) {
+      $this->showError($e);
+    }
+  }
+
+  private function error() {
+    $this->getConfig();
+    $logFile =& $this->config['exception_handling']['value']['log']['settings']['file'];
+    if(!isset($logFile) || !$logFile) throw new Exception("Empty settings: log file");
+    $cmd = 'tail '.escapeshellarg($logFile);
+    echo shell_exec($cmd);
+    die();
+  }
+
+  private function db() {
+    $this->getConfig();
+    $connection =& $this->config['connections']['value']['default'];
+    if(!isset($connection) || !$connection) throw new Exception("Empty settings: connections");
+    echo var_dump($connection);
+    die();
+  }
+
+  private function show() {
+    if(!isset($this->argv[2]) || !isset($this->argv[3])) throw new Exception("Use bitrix show element|section|iblock (SECTION_ID) ID");
+
+    $this->initBitrix();
+    switch($this->argv[2]) {
+      case 'element':
+        $this->showElement($this->argv[3], $this->argv[4]);
+        break;
+      case 'section':
+      case 'iblock':
+      default:
+        throw new Exception("Under construction");
+    }
+  }
+
+  private function showElement($iblockId, $id) {
+    if(!CModule::IncludeModule("iblock")) throw new Exception("Can not include iblock");
+    $arSort = array("SORT" => "ASC");
+    $arFilter = array("IBLOCK_ID" => $iblockId, "ID" => $id);
+    $arSelect = array("ID");
+    $arNavStartParams = false;
+
+    error_reporting(E_ALL);
+
+    $itemsList = CIBlockElement::GetList($arSort, $arFilter, false, $arNavStartParams, $arSelect);
+
+    if ($itemsList->SelectedRowsCount() > 0) {
+      while ($item = $itemsList->Fetch()) {
+        die(var_dump($item));
+      }
+    } else {
+      throw new Exception("Can not find element ID: $id");
+    }
+
+  }
+
+
+
+  private function components() {
+    $file = $this->argv[2];
+    if(!$file || !file_exists($file)) throw new Exception("File not exists: ".$file.PHP_EOL);
+    $file = file_get_contents($file);
+    if(preg_match_all('~\$APPLICATION\s*->\s*IncludeComponent\s*\(\s*["|\'](.*?)["|\']~i', $file, $m)) {
+      echo var_dump($m[1]);
+    } else {
+      echo 'No "$APPLICATION->IncludeComponent" founded';
+    }
+    die();
+  }
+
+  private function initBitrix() {
+    $this->getConfig();
+    $_SERVER["DOCUMENT_ROOT"] = $this->rootDir;
+    define("LANGUAGE_ID", "pa");
+    define("NO_KEEP_STATISTIC", true);
+    define("NOT_CHECK_PERMISSIONS", true);
+    require($_SERVER["DOCUMENT_ROOT"]."/bitrix/header.php");
+    global $APPLICATION;
+    $APPLICATION->RestartBuffer();
+  }
+
+  private function locateFile($file) {
+    $dir = getcwd();
+    try {
+      $locateDir = $this->dir;
+      @chdir($locateDir);
+      if(!$file || !file_exists($file)) throw new Exception("File not exists: ".$file.PHP_EOL);
+    } catch (Exception $e) {
+      $locateDir = $this->rootDir;
+      @chdir($locateDir);
+      if(!$file || !file_exists($file)) throw new Exception("File not exists: ".$file.PHP_EOL);
+
+    }
+    chdir($dir);
+    return $locateDir;
+  }
+
+  private $rootDir, $settingsFile, $config, $dir;
+  private function getConfig() {
+    $this->findrootDir($this->dir);
+    $this->loadBitrixConfig();
+  }
+
+  private function loadBitrixConfig() {
+    $this->config = include($this->settingsFile);
+  }
+
+  private function findrootDir($dir) {
+    if(!$dir || $dir == '/') throw new Exception("Can not find bitrix root dir");
+    $settingsFile = $dir . '/bitrix/.settings.php';
+    if(file_exists($settingsFile)) {
+      $this->rootDir = $dir;
+      $this->settingsFile = $settingsFile;
+      chdir($this->rootDir);
+      return;
+    }
+    return $this->findrootDir(dirname($dir));
+  }
+
+  private function showError(Exception $e) {
+    echo $e->getMessage().PHP_EOL;
+    die();
+  }
+
+  private function help() {
+    echo 'Usage:'.PHP_EOL;
+    echo 'bitrix error - show last error from error log'.PHP_EOL;
+    echo 'bitrix db - show db config'.PHP_EOL;
+    echo 'bitrix show {id} - get info about Infoblock element/section/iblock ID'.PHP_EOL;
+    echo 'bitrix components file - show components in file'.PHP_EOL;
+    die();
+  }
+}
+
+$cli = new BABitrixCli();
+$cli->run();
