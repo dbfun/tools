@@ -3,7 +3,7 @@ PROJECT=$1
 echo "Размещение проекта: $PROJECT"
 
 cd $(dirname $(readlink -f $0))
-source config/db
+source etc/db
 
 cd /var/www/$PROJECT || { echo "Такого проекта нет"; exit 1; }
 echo "Вы уверены (y/n): "

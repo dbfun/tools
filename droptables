@@ -6,13 +6,13 @@ if [ -z "$dbname" ]; then
 fi
 
 cd $(dirname $(readlink -f $0))
-source config/db
+source etc/db
 
 function getTables() {
   query="SHOW TABLES FROM \`$1\`"
   results=`mysql -s -N -u$dbuser -p$dbpass -h$dbhost -e "$query"`
   }
-  
+
 getTables $1
 
 read -p "Are you sure? (yes/no)" -e input

@@ -10,7 +10,7 @@ if [ -z "$PROJECT" ]; then
     exit 1
 fi
 
-if [ ! -f "config/projects" ]; then
+if [ ! -f "etc/projects" ]; then
     echo "No projects profiles"
     exit 2
 fi
@@ -31,7 +31,7 @@ case "$OPTION" in
                 echo "Reconnect..."
             fi
         fi
-        source config/projects
+        source etc/projects
 
         if [ -z "${PROFILE[$PROJECT]}" ]; then
             echo "No such project profile"
