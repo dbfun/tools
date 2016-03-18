@@ -3,7 +3,28 @@
 PROJECT=$1
 OPTION=$2
 cd $(dirname $(readlink -f $0))
+
+source etc/projects
+
 PROJECT_MNT_PATH=~/mnt/$PROJECT
+
+function checkMountPoint {
+  if [ -d "$PROJECT_MNT_PATH" ]; then
+      NOT_MOUNTPOINT=`mountpoint "$PROJECT_MNT_PATH" | grep 'is not a mountpoint'`
+      if [ -z "$NOT_MOUNTPOINT" ]; then
+          echo "Project already mounted $PROJECT_MNT_PATH"
+          exit 3
+      else
+          echo "Reconnect..."
+      fi
+  fi
+}
+
+function prepareMount {
+  _UID=`id -u`
+  _GID=`id -g`
+  mkdir -p $PROJECT_MNT_PATH
+}
 
 if [ -z "$PROJECT" ]; then
     echo 'Usage: mymount project'
@@ -15,38 +36,78 @@ if [ ! -f "etc/projects" ]; then
     exit 2
 fi
 
-case "$OPTION" in
-    -u)
-        fusermount -u -z $PROJECT_MNT_PATH
-        rmdir $PROJECT_MNT_PATH
-        exit 0
-        ;;
-    *)
-        if [ -d "$PROJECT_MNT_PATH" ]; then
-            NOT_MOUNTPOINT=`mountpoint "$PROJECT_MNT_PATH" | grep 'is not a mountpoint'`
-            if [ -z "$NOT_MOUNTPOINT" ]; then
-                echo "Project already mounted $PROJECT_MNT_PATH"
-                exit 3
-            else
-                echo "Reconnect..."
-            fi
-        fi
-        source etc/projects
+if [ -n "${PROFILE[$PROJECT]}" ]; then
+    RESP=`which sshfs`
+    if [ $? -ne "0" ]; then
+      echo 'No sshfs! Use: sudo apt-get install sshfs'
+      exit 10
+    fi
+    TYPE='sshfs'
+    SSH_SERVER_STR=${PROFILE[$PROJECT]}
+  elif [ -n "${SAMBA_PROFILE[$PROJECT]}" ]; then
+    RESP=`which mount.cifs`
+    if [ $? -ne "0" ]; then
+      echo 'No mount.cifs! Use: sudo apt-get install cifs-utils'
+      exit 10
+    fi
+    TYPE='mount.cifs'
+    SSH_SERVER_STR=${SAMBA_PROFILE[$PROJECT]}
+  else
+    echo "No such project profile"
+    exit 4
+fi
 
-        if [ -z "${PROFILE[$PROJECT]}" ]; then
-            echo "No such project profile"
-            exit 4
-        fi
+if [ "$TYPE" == "sshfs" ]; then
 
-        _UID=`id -u`
-        _GID=`id -g`
-        mkdir -p $PROJECT_MNT_PATH
-        sshfs -o reconnect -o idmap=user -o uid=$_UID -ogid=$_GID -o allow_other "${PROFILE[$PROJECT]}" $PROJECT_MNT_PATH
-          if [ 0 != "$?" ]; then
-            echo 'Error'
+    case "$OPTION" in
+        -u)
+            fusermount -u -z $PROJECT_MNT_PATH
             rmdir $PROJECT_MNT_PATH
-            exit 5
-          fi
-        exit 0
-        ;;
-esac
+            exit 0
+            ;;
+        *)
+
+            checkMountPoint
+
+            prepareMount
+
+            sshfs -o reconnect -o idmap=user -o uid=$_UID -o gid=$_GID -o allow_other "$SSH_SERVER_STR" $PROJECT_MNT_PATH
+              if [ 0 != "$?" ]; then
+                echo 'Error'
+                rmdir $PROJECT_MNT_PATH
+                exit 5
+              fi
+            exit 0
+            ;;
+    esac
+
+elif [ "$TYPE" == "mount.cifs" ]; then
+
+    case "$OPTION" in
+
+        -u)
+            umount $PROJECT_MNT_PATH
+            rmdir $PROJECT_MNT_PATH
+            exit 0
+            ;;
+        *)
+            checkMountPoint
+
+            prepareMount
+
+            mount.cifs -o reconnect -o uid=$_UID -o gid=$_GID -o allow_other -o iocharset=utf8 ${SSH_SERVER_STR/VAR_MOUNTPOINT/$PROJECT_MNT_PATH}
+            if [ 0 != "$?" ]; then
+              echo 'Error'
+              rmdir $PROJECT_MNT_PATH
+              exit 5
+            fi
+            exit 0
+            ;;
+    esac
+
+else
+
+    echo "No such type"
+    exit 6
+
+fi

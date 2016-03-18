@@ -1,2 +1,3 @@
 declare -A PROFILE
 PROFILE[test]='test@test.ru:/home/test/test.ru'
+SAMBA_PROFILE[windows.server]='//server/path/ VAR_MOUNTPOINT -o username=name,password=pass,domain=dom,rw'
