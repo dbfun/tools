@@ -26,9 +26,30 @@ function prepareMount {
   mkdir -p $PROJECT_MNT_PATH
 }
 
+function showStatus {
+  if [ ! -f "etc/projects" ]; then
+    echo "No projects profiles"
+  else
+    echo ===== PROJECTS =====
+    for i in "${!PROFILE[@]}"; do
+      echo $i
+    done
+    echo
+    echo ===== SAMBA PROJECTS =====
+    for i in "${!SAMBA_PROFILE[@]}"; do
+      echo $i
+    done
+    echo
+    echo ===== MOUNTED =====
+    mount -t fuse.sshfs
+    mount -t cifs
+    echo
+  fi
+}
+
 if [ -z "$PROJECT" ]; then
-    echo 'Usage: mymount project'
-    exit 1
+    showStatus
+    exit 0
 fi
 
 if [ ! -f "etc/projects" ]; then
