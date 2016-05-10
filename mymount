@@ -10,8 +10,8 @@ PROJECT_MNT_PATH=~/mnt/$PROJECT
 
 function checkMountPoint {
   if [ -d "$PROJECT_MNT_PATH" ]; then
-      NOT_MOUNTPOINT=`mountpoint "$PROJECT_MNT_PATH" | grep 'is not a mountpoint'`
-      if [ -z "$NOT_MOUNTPOINT" ]; then
+      mountpoint "$PROJECT_MNT_PATH"
+      if [ "$?" == "0" ]; then
           echo "Project already mounted $PROJECT_MNT_PATH"
           exit 3
       else
