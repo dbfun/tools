@@ -1,4 +1,4 @@
-<?
+<?php
 
 class ExcelImporter {
   public function __construct() {

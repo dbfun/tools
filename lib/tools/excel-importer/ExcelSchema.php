@@ -1,4 +1,5 @@
-<?
+<?php
+
 class ExcelSchema {
   // rowStart - номер строки, с которой начинается парсинг
   // rowEndControl - столбец, по которому контроллируется конец документа
@@ -28,7 +29,7 @@ class ExcelSchema {
     if (isset($this->schema->customFields)) $saver->setCustomFields($this->schema->customFields);
     return $saver;
     }
-    
+
   }
 
 

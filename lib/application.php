@@ -6,7 +6,7 @@
  * @copyright
  */
 
- 
+
 class PApplication {
 
   /**
@@ -14,7 +14,7 @@ class PApplication {
    *
    */
 
-  public function init() 
+  public static function init()
   {
     require(__DIR__.'/core/factory.php');
     PFactory::init();

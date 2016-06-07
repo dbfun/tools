@@ -1,4 +1,5 @@
-<?
+<?php
+
 class DBSaver extends ExcelSaver {
 
   private $options, $db, $customFields;
