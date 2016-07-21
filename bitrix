@@ -13,33 +13,7 @@ class BABitrixCli {
     $this->dir = getcwd();
   }
 
-  public function run() {
-    try {
-      switch ($this->argv[1]) {
-        case 'help':
-          $this->help();
-          break;
-        case 'error':
-          $this->error();
-          break;
-        case 'db':
-          $this->db();
-          break;
-        case 'show':
-          $this->show();
-          break;
-        case 'components':
-          $this->components();
-          break;
-        default:
-          $this->help();
-      }
-    } catch (Exception $e) {
-      $this->showError($e);
-    }
-  }
-
-  private function error() {
+  public function error() {
     $this->getConfig();
     $logFile =& $this->config['exception_handling']['value']['log']['settings']['file'];
     if(!isset($logFile) || !$logFile) throw new Exception("Empty settings: log file");
@@ -48,99 +22,108 @@ class BABitrixCli {
     die();
   }
 
-  private function db() {
+  public function db() {
     $this->getConfig();
     $connection =& $this->config['connections']['value']['default'];
     if(!isset($connection) || !$connection) throw new Exception("Empty settings: connections");
-    echo var_dump($connection);
+    $this->showVar($connection);
     die();
   }
 
-  private function show() {
-    if(!isset($this->argv[2]) || !isset($this->argv[3])) throw new Exception("Use bitrix show element|section|iblock (SECTION_ID) ID");
+  public function show() {
+    if(!isset($this->argv[2])) throw new Exception("Use bitrix --[element|section|iblock|user] [ID]");
 
-    $this->initBitrix();
-    switch($this->argv[2]) {
-      case 'element':
-        $this->showElement($this->argv[3], $this->argv[4]);
+    switch($this->argv[1]) {
+      case '--element':
+      case '-e':
+        $this->showElement($this->argv[2]);
         break;
-      case 'section':
-      case 'iblock':
+      case '--user':
+      case '-u':
+        $this->showUser($this->argv[2]);
+        break;
+      case '--section':
+      case '-s':
+        $this->showSection($this->argv[2]);
+        break;
+      case '--iblock':
+      case '-i':
+        $this->showIblock($this->argv[2]);
       default:
         throw new Exception("Under construction");
     }
   }
 
-  private function showElement($iblockId, $id) {
-    if(!CModule::IncludeModule("iblock")) throw new Exception("Can not include iblock");
-    $arSort = array("SORT" => "ASC");
-    $arFilter = array("IBLOCK_ID" => $iblockId, "ID" => $id);
-    $arSelect = array("ID");
-    $arNavStartParams = false;
-
-    error_reporting(E_ALL);
-
-    $itemsList = CIBlockElement::GetList($arSort, $arFilter, false, $arNavStartParams, $arSelect);
-
-    if ($itemsList->SelectedRowsCount() > 0) {
-      while ($item = $itemsList->Fetch()) {
-        die(var_dump($item));
-      }
-    } else {
-      throw new Exception("Can not find element ID: $id");
-    }
-
+  private function showIblock($_id) {
+    if(!is_numeric($_id)) throw new Exception("iblock ID must be a number", 1);
+    $id = (int)$_id;
+    $arFilter = array('id' => $id);
+    $rs = CIBlock::GetList($arOrder = array("SORT"=>"ASC"), $arFilter, $bIncCnt = true);
+    if($rs->SelectedRowsCount() == 0) throw new Exception("Can not find iblock by ID: ".$_id, 1);
+    $item = $rs->Fetch();
+    $this->showVar($item);
+    die();
   }
 
+  private function showSection($_id) {
+    if(!is_numeric($_id)) throw new Exception("section ID must be a number", 1);
+    $id = (int)$_id;
+    $arFilter = array('id' => $id);
+    $arSelect = array('*');
+    $rs = CIBlockSection::GetList($arOrder = array("SORT"=>"ASC"), $arFilter, $bIncCnt = true, $arSelect, false);
+    if($rs->SelectedRowsCount() == 0) throw new Exception("Can not find section by ID: ".$_id, 1);
+    $item = $rs->Fetch();
+    $this->showVar($item);
+    die();
+  }
 
+  private function showUser($_id) {
+    if(!is_numeric($_id)) throw new Exception("user ID must be a number", 1);
+    $id = (int)$_id;
+    $rs = CUser::GetByID($id);
+    if($rs->SelectedRowsCount() == 0) throw new Exception("Can not find user by ID: ".$_id, 1);
+    $item = $rs->Fetch();
+    $this->showVar($item);
+    die();
+  }
 
-  private function components() {
+  private function showElement($_id) {
+    if(!is_numeric($_id)) throw new Exception("user ID must be a number", 1);
+    $id = (int)$_id;
+    $arSort = array("SORT" => "ASC");
+    $arFilter = array("ID" => $id);
+    $arSelect = array("*");
+    $arNavStartParams = false;
+    $rs = CIBlockElement::GetList($arSort, $arFilter, false, $arNavStartParams, $arSelect);
+    if($rs->SelectedRowsCount() == 0) throw new Exception("Can not find element ID: $_id");
+    $item = $rs->Fetch();
+    $this->showVar($item);
+  }
+
+  public function component() {
     $file = $this->argv[2];
     if(!$file || !file_exists($file)) throw new Exception("File not exists: ".$file.PHP_EOL);
     $file = file_get_contents($file);
     if(preg_match_all('~\$APPLICATION\s*->\s*IncludeComponent\s*\(\s*["|\'](.*?)["|\']~i', $file, $m)) {
-      echo var_dump($m[1]);
+      $this->showVar($m[1]);
     } else {
       echo 'No "$APPLICATION->IncludeComponent" founded';
     }
     die();
   }
 
-  private function initBitrix() {
-    $this->getConfig();
-    $_SERVER["DOCUMENT_ROOT"] = $this->rootDir;
-    define("LANGUAGE_ID", "pa");
-    define("NO_KEEP_STATISTIC", true);
-    define("NOT_CHECK_PERMISSIONS", true);
-    require($_SERVER["DOCUMENT_ROOT"]."/bitrix/header.php");
-    global $APPLICATION;
-    $APPLICATION->RestartBuffer();
-  }
-
-  private function locateFile($file) {
-    $dir = getcwd();
-    try {
-      $locateDir = $this->dir;
-      @chdir($locateDir);
-      if(!$file || !file_exists($file)) throw new Exception("File not exists: ".$file.PHP_EOL);
-    } catch (Exception $e) {
-      $locateDir = $this->rootDir;
-      @chdir($locateDir);
-      if(!$file || !file_exists($file)) throw new Exception("File not exists: ".$file.PHP_EOL);
-
-    }
-    chdir($dir);
-    return $locateDir;
-  }
-
   private $rootDir, $settingsFile, $config, $dir;
-  private function getConfig() {
+  public function getConfig() {
     $this->findrootDir($this->dir);
     $this->loadBitrixConfig();
   }
 
   private function loadBitrixConfig() {
     $this->config = include($this->settingsFile);
+  }
+
+  public function getRootDir() {
+    return $this->rootDir;
   }
 
   private function findrootDir($dir) {
@@ -155,20 +138,97 @@ class BABitrixCli {
     return $this->findrootDir(dirname($dir));
   }
 
-  private function showError(Exception $e) {
-    echo $e->getMessage().PHP_EOL;
+  public function showError(Exception $e) {
+    fwrite(STDERR, $e->getMessage().PHP_EOL);
     die();
   }
 
-  private function help() {
-    echo 'Usage:'.PHP_EOL;
-    echo 'bitrix error - show last error from error log'.PHP_EOL;
-    echo 'bitrix db - show db config'.PHP_EOL;
-    echo 'bitrix show {id} - get info about Infoblock element/section/iblock ID'.PHP_EOL;
-    echo 'bitrix components file - show components in file'.PHP_EOL;
+  private $bold = "\033[1m", $nobold = "\033[0m";
+  public function help() {
+    $bold =& $this->bold;
+    $nobold =& $this->nobold;
+    echo "{$bold}NAME{$nobold}".PHP_EOL;
+    echo "\tbitrix - CLI utility for CMS Bitrix".PHP_EOL.PHP_EOL;
+    echo "{$bold}SYNOPSIS{$nobold}".PHP_EOL;
+    echo "\tbitrix [OPTION]... [FILE]".PHP_EOL.PHP_EOL;
+    echo "{$bold}DESCRIPTION{$nobold}".PHP_EOL.PHP_EOL;
+
+    echo "\t{$bold}--error{$nobold}".PHP_EOL;
+    echo "\t\tshow last error from error log".PHP_EOL.PHP_EOL;
+
+    echo "\t{$bold}--db{$nobold}".PHP_EOL;
+    echo "\t\tshow db config".PHP_EOL.PHP_EOL;
+
+    echo "\t{$bold}-[e|s|i|u], --[element|section|iblock|user]{$nobold} [ID]".PHP_EOL;
+    echo "\t\tget info about Infoblock element/section/iblock/user ID".PHP_EOL.PHP_EOL;
+
+    echo "\t{$bold}--component{$nobold} [FILE]".PHP_EOL;
+    echo "\t\tshow components in file".PHP_EOL.PHP_EOL;
     die();
+  }
+
+  private function showVar($_var) {
+    $var = !defined('LANG_CHARSET') || LANG_CHARSET == 'UTF-8' ? $_var : $this->iconvArray(LANG_CHARSET, 'utf-8', $_var);
+    var_dump($var);
+  }
+
+  private function iconvArray($charset_from, $charset_to, $arData) {
+    $arTmp = array();
+    foreach($arData as $k => $_v)
+    {
+      if(is_array($_v)) {
+        $v = $this->iconvArray($charset_from, $charset_to, $_v);
+      } else {
+        $v = iconv($charset_from, $charset_to.'//IGNORE', $_v);
+        if(empty($v)) $v = iconv($charset_from, $charset_to.'//TRANSLIT', $_v);
+      }
+      $k = iconv($charset_from, $charset_to.'//IGNORE', $k);
+      $arTmp[$k] = $v;
+    }
+    return $arTmp;
   }
 }
 
+error_reporting(E_ERROR | E_WARNING | E_PARSE);
+
 $cli = new BABitrixCli();
-$cli->run();
+
+try {
+  switch ($argv[1]) {
+    case '--help':
+      $cli->help();
+      break;
+    case '--error':
+      $cli->error();
+      break;
+    case '--db':
+      $cli->db();
+      break;
+    case '--element':
+    case '-e':
+    case '--section':
+    case '-s':
+    case '--iblock':
+    case '-i':
+    case '--user':
+    case '-u':
+      // Нельзя помещать подключение битрикса в функцию - не работает :)
+      $cli->getConfig();
+      $_SERVER["DOCUMENT_ROOT"] = $cli->getRootDir();
+      define("LANGUAGE_ID", "ru");
+      define("NO_KEEP_STATISTIC", true);
+      define("NOT_CHECK_PERMISSIONS", true);
+      require($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/main/include/prolog_before.php");
+      if(!CModule::IncludeModule('iblock')) throw new Exception("Can not include iblock");
+      $cli->show();
+      break;
+    case '--component':
+      $cli->component();
+      break;
+    default:
+      $cli->help();
+  }
+} catch (Exception $e) {
+  $cli->showError($e);
+}
+
