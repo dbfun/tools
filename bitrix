@@ -30,25 +30,48 @@ class BABitrixCli {
     die();
   }
 
-  public function show() {
-    if(!isset($this->argv[2])) throw new Exception("Use bitrix --[element|section|iblock|user] [ID]");
+  private function showEvent() {
+    $query = "SELECT * FROM `b_event` ORDER BY `ID` DESC LIMIT 5";
+    global $DB;
+    $rs = $DB->Query($query);
 
+    if($rs->SelectedRowsCount() == 0) throw new Exception("No events!");
+    $items = array();
+    while($item = $rs->Fetch()) {
+      $item['C_FIELDS'] = unserialize($item['C_FIELDS']);
+      $items[] = $item;
+    }
+    $items = array_reverse($items);
+    $this->showVar($items);
+
+    die();
+  }
+
+  public function showFromBX() {
     switch($this->argv[1]) {
       case '--element':
       case '-e':
+        if(!isset($this->argv[2])) throw new Exception("Use bitrix --element [ID]");
         $this->showElement($this->argv[2]);
         break;
       case '--user':
       case '-u':
+        if(!isset($this->argv[2])) throw new Exception("Use bitrix --user [ID]");
         $this->showUser($this->argv[2]);
         break;
       case '--section':
       case '-s':
+        if(!isset($this->argv[2])) throw new Exception("Use bitrix --section [ID]");
         $this->showSection($this->argv[2]);
         break;
       case '--iblock':
       case '-i':
+        if(!isset($this->argv[2])) throw new Exception("Use bitrix --iblock [ID]");
         $this->showIblock($this->argv[2]);
+        break;
+      case '--event':
+        $this->showEvent();
+        break;
       default:
         throw new Exception("Under construction");
     }
@@ -88,7 +111,7 @@ class BABitrixCli {
   }
 
   private function showElement($_id) {
-    if(!is_numeric($_id)) throw new Exception("user ID must be a number", 1);
+    if(!is_numeric($_id)) throw new Exception("element ID must be a number", 1);
     $id = (int)$_id;
     $arSort = array("SORT" => "ASC");
     $arFilter = array("ID" => $id);
@@ -162,6 +185,9 @@ class BABitrixCli {
     echo "\t{$bold}-[e|s|i|u], --[element|section|iblock|user]{$nobold} [ID]".PHP_EOL;
     echo "\t\tget info about Infoblock element/section/iblock/user ID".PHP_EOL.PHP_EOL;
 
+    echo "\t{$bold}--event{$nobold}".PHP_EOL;
+    echo "\t\tshow last events".PHP_EOL.PHP_EOL;
+
     echo "\t{$bold}--component{$nobold} [FILE]".PHP_EOL;
     echo "\t\tshow components in file".PHP_EOL.PHP_EOL;
     die();
@@ -212,6 +238,7 @@ try {
     case '-i':
     case '--user':
     case '-u':
+    case '--event':
       // Нельзя помещать подключение битрикса в функцию - не работает :)
       $cli->getConfig();
       $_SERVER["DOCUMENT_ROOT"] = $cli->getRootDir();
@@ -220,7 +247,7 @@ try {
       define("NOT_CHECK_PERMISSIONS", true);
       require($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/main/include/prolog_before.php");
       if(!CModule::IncludeModule('iblock')) throw new Exception("Can not include iblock");
-      $cli->show();
+      $cli->showFromBX();
       break;
     case '--component':
       $cli->component();
