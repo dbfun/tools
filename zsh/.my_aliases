@@ -1,5 +1,12 @@
+# воспринимать команду без коррекции
+alias hive='nocorrect ./hive'
+
+# TMUX
 alias tmux='tmux attach || tmux new'
+
+# git
 alias g=git
+
 
 # разукрашиваем некоторые команды с помощью grc
 [[ -f /usr/bin/grc ]] && {
