@@ -117,10 +117,24 @@ class BABitrixCli {
     $arFilter = array("ID" => $id);
     $arSelect = array("*");
     $arNavStartParams = false;
+    $isHistory = false;
     $rs = CIBlockElement::GetList($arSort, $arFilter, false, $arNavStartParams, $arSelect);
+    if($rs->SelectedRowsCount() == 0) {
+      $isHistory = true;
+      $arFilter['SHOW_NEW'] = 'Y';
+      $rs = CIBlockElement::GetList($arSort, $arFilter, false, $arNavStartParams, $arSelect);
+    }
+
     if($rs->SelectedRowsCount() == 0) throw new Exception("Can not find element ID: $_id");
     $item = $rs->Fetch();
+
+    if($isHistory) {
+      echo '==== Документооборот ====' . PHP_EOL;
+    }
     $this->showVar($item);
+    if($isHistory) {
+      echo '==== Документооборот ====' . PHP_EOL;
+    }
   }
 
   public function component() {
