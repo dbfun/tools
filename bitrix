@@ -17,7 +17,7 @@ class BABitrixCli {
     $this->getConfig();
     $logFile =& $this->config['exception_handling']['value']['log']['settings']['file'];
     if(!isset($logFile) || !$logFile) throw new Exception("Empty settings: log file");
-    $cmd = 'tail '.escapeshellarg($logFile);
+    $cmd = 'tail -n 13 '.escapeshellarg($logFile);
     echo shell_exec($cmd);
     die();
   }
@@ -30,7 +30,7 @@ class BABitrixCli {
     die();
   }
 
-  private function showEvent() {
+  private function showEvent($format) {
     $query = "SELECT * FROM `b_event` ORDER BY `ID` DESC LIMIT 5";
     global $DB;
     $rs = $DB->Query($query);
@@ -42,7 +42,7 @@ class BABitrixCli {
       $items[] = $item;
     }
     $items = array_reverse($items);
-    $this->showVar($items);
+    $this->showVar($items, $format);
 
     die();
   }
@@ -70,11 +70,23 @@ class BABitrixCli {
         $this->showIblock($this->argv[2]);
         break;
       case '--event':
-        $this->showEvent();
+        $this->showEvent($this->argv[2]);
+        break;
+      case '--file':
+      case '-f':
+        $this->showFile($this->argv[2]);
         break;
       default:
         throw new Exception("Under construction");
     }
+  }
+
+  private function showFile($_id) {
+    if(!is_numeric($_id)) throw new Exception("file ID must be a number", 1);
+    $id = (int)$_id;
+    $item = CFile::GetFileArray($id);
+    $this->showVar($item);
+    die();
   }
 
   private function showIblock($_id) {
@@ -187,7 +199,10 @@ class BABitrixCli {
     echo "{$bold}NAME{$nobold}".PHP_EOL;
     echo "\tbitrix - CLI utility for CMS Bitrix".PHP_EOL.PHP_EOL;
     echo "{$bold}SYNOPSIS{$nobold}".PHP_EOL;
-    echo "\tbitrix [OPTION]... [FILE]".PHP_EOL.PHP_EOL;
+    echo "\tbitrix option [FORMAT]".PHP_EOL;
+    echo "\tbitrix option ID [FORMAT]".PHP_EOL;
+    echo "\tbitrix option FILE".PHP_EOL.PHP_EOL;
+
     echo "{$bold}DESCRIPTION{$nobold}".PHP_EOL.PHP_EOL;
 
     echo "\t{$bold}--error{$nobold}".PHP_EOL;
@@ -196,8 +211,8 @@ class BABitrixCli {
     echo "\t{$bold}--db{$nobold}".PHP_EOL;
     echo "\t\tshow db config".PHP_EOL.PHP_EOL;
 
-    echo "\t{$bold}-[e|s|i|u], --[element|section|iblock|user]{$nobold} [ID]".PHP_EOL;
-    echo "\t\tget info about Infoblock element/section/iblock/user ID".PHP_EOL.PHP_EOL;
+    echo "\t{$bold}-[e|s|i|u|f], --[element|section|iblock|user|file]{$nobold} [ID]".PHP_EOL;
+    echo "\t\tget info about Infoblock element/section/iblock/user/file ID".PHP_EOL.PHP_EOL;
 
     echo "\t{$bold}--event{$nobold}".PHP_EOL;
     echo "\t\tshow last events".PHP_EOL.PHP_EOL;
@@ -207,9 +222,21 @@ class BABitrixCli {
     die();
   }
 
-  private function showVar($_var) {
+  private function showVar($_var, $format = null) {
     $var = !defined('LANG_CHARSET') || LANG_CHARSET == 'UTF-8' ? $_var : $this->iconvArray(LANG_CHARSET, 'utf-8', $_var);
-    var_dump($var);
+    switch($format) {
+      case 'letter':
+        $var = (array)$var;
+        foreach($var as $v) {
+          echo $v['ID'] . ' > ' . $v['EVENT_NAME'].PHP_EOL;
+          echo implode(PHP_EOL, $v['C_FIELDS']);
+          echo PHP_EOL.PHP_EOL;
+        }
+        break;
+      default:
+        var_dump($var);
+    }
+
   }
 
   private function iconvArray($charset_from, $charset_to, $arData) {
@@ -253,6 +280,8 @@ try {
     case '--user':
     case '-u':
     case '--event':
+    case '--file':
+    case '-f':
       // Нельзя помещать подключение битрикса в функцию - не работает :)
       $cli->getConfig();
       $_SERVER["DOCUMENT_ROOT"] = $cli->getRootDir();
