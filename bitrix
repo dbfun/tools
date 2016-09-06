@@ -146,6 +146,8 @@ class BABitrixCli {
     $this->showVar($item);
     if($isHistory) {
       echo '==== Документооборот ====' . PHP_EOL;
+      $lastId = CIBlockElement::WF_GetLast($id);
+      echo 'CIBlockElement::WF_GetLast(): '. $lastId . PHP_EOL;
     }
   }
 
