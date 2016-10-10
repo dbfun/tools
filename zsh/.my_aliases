@@ -7,6 +7,8 @@ alias tmux='tmux attach || tmux new'
 # git
 alias g=git
 
+alias node=nodejs
+
 
 # разукрашиваем некоторые команды с помощью grc
 [[ -f /usr/bin/grc ]] && {
