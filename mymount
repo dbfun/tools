@@ -4,7 +4,10 @@ PROJECT=$1
 OPTION=$2
 cd $(dirname $(readlink -f $0))
 
-source etc/projects
+declare -A PROFILE
+declare -A SAMBA_PROFILE
+
+source <(cat etc/projects.d/*.conf)
 
 PROJECT_MNT_PATH=~/mnt/$PROJECT
 
@@ -27,34 +30,31 @@ function prepareMount {
 }
 
 function showStatus {
-  if [ ! -f "etc/projects" ]; then
-    echo "No projects profiles"
-  else
-    echo ===== PROJECTS =====
-    for i in "${!PROFILE[@]}"; do
-      echo $i
-    done
-    echo
-    echo ===== SAMBA PROJECTS =====
-    for i in "${!SAMBA_PROFILE[@]}"; do
-      echo $i
-    done
-    echo
-    echo ===== MOUNTED =====
-    mount -t fuse.sshfs
-    mount -t cifs
-    echo
-  fi
+  echo ===== PROJECTS =====
+  for i in "${!PROFILE[@]}"; do
+    echo $i
+  done
+  echo
+  echo ===== SAMBA PROJECTS =====
+  for i in "${!SAMBA_PROFILE[@]}"; do
+    echo $i
+  done
+  echo
+  echo ===== MOUNTED =====
+  mount -t fuse.sshfs
+  mount -t cifs
+  echo
 }
+
+CONF=`ls etc/projects.d/*.conf > /dev/null 2>&1`
+if [ $? -ne "0" ]; then
+    echo "No projects profiles"
+    exit 2
+fi
 
 if [ -z "$PROJECT" ]; then
     showStatus
     exit 0
-fi
-
-if [ ! -f "etc/projects" ]; then
-    echo "No projects profiles"
-    exit 2
 fi
 
 if [ -n "${PROFILE[$PROJECT]}" ]; then
