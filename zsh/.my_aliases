@@ -7,6 +7,8 @@ alias tmux='tmux attach || tmux new'
 # git
 alias g=git
 
+alias node=nodejs
+
 # grep
 function mygrep { grep -rnIi "$1" . --color --include '*.php'; }
 
