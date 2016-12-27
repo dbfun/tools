@@ -12,6 +12,10 @@ alias node=nodejs
 # grep
 function mygrep { grep -rnIi "$1" . --color --include '*.php'; }
 
+# iconv
+
+alias ic='iconv -f cp1251 -t utf-8'
+
 # разукрашиваем некоторые команды с помощью grc
 [[ -f /usr/bin/grc ]] && {
   alias ping="grc --colour=auto ping"

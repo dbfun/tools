@@ -76,6 +76,10 @@ class BABitrixCli {
       case '-f':
         $this->showFile($this->argv[2]);
         break;
+      case '--option':
+      case '-o':
+        $this->showOption($this->argv[2], $this->argv[3]);
+        break;
       default:
         throw new Exception("Under construction");
     }
@@ -86,6 +90,12 @@ class BABitrixCli {
     $id = (int)$_id;
     $item = CFile::GetFileArray($id);
     $this->showVar($item);
+    die();
+  }
+
+  private function showOption($moduleName, $name) {
+    $var = COption::GetOptionString($moduleName, $name);
+    var_dump($var);
     die();
   }
 
@@ -213,8 +223,8 @@ class BABitrixCli {
     echo "\t{$bold}--db{$nobold}".PHP_EOL;
     echo "\t\tshow db config".PHP_EOL.PHP_EOL;
 
-    echo "\t{$bold}-[e|s|i|u|f], --[element|section|iblock|user|file]{$nobold} [ID]".PHP_EOL;
-    echo "\t\tget info about Infoblock element/section/iblock/user/file ID".PHP_EOL.PHP_EOL;
+    echo "\t{$bold}-[e|s|i|u|f|o], --[element|section|iblock|user|file|option]{$nobold} [ID]".PHP_EOL;
+    echo "\t\tget info about Infoblock element/section/iblock/user/file/option ID/string".PHP_EOL.PHP_EOL;
 
     echo "\t{$bold}--event{$nobold}".PHP_EOL;
     echo "\t\tshow last events".PHP_EOL.PHP_EOL;
@@ -284,6 +294,8 @@ try {
     case '--event':
     case '--file':
     case '-f':
+    case '--option':
+    case '-o':
       // Нельзя помещать подключение битрикса в функцию - не работает :)
       $cli->getConfig();
       $_SERVER["DOCUMENT_ROOT"] = $cli->getRootDir();
