@@ -18,9 +18,6 @@ function mygrep { grep -rnIi "$1" . --color --include '*.php'; }
   alias traceroute="grc --colour=auto traceroute"
   alias make="grc --colour=auto make"
   alias diff="grc --colour=auto diff"
-  alias cvs="grc --colour=auto cvs"
   alias netstat="grc --colour=auto netstat"
-  alias logc="grc cat"
-  alias logt="grc tail"
-  alias logh="grc head"
+  alias dig="grc --colour=auto dig"
 }
