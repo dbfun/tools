@@ -7,13 +7,11 @@ alias tmux='tmux attach || tmux new'
 # git
 alias g=git
 
-alias node=nodejs
-
 # grep
 function mygrep { grep -rnIi "$1" . --color --include '*.php'; }
 
 # разукрашиваем некоторые команды с помощью grc
-[[ -f /usr/bin/grc ]] && {
+if type "grc" > /dev/null; then
   alias ping="grc --colour=auto ping"
   alias traceroute="grc --colour=auto traceroute"
   alias make="grc --colour=auto make"
@@ -23,4 +21,4 @@ function mygrep { grep -rnIi "$1" . --color --include '*.php'; }
   alias logc="grc cat"
   alias logt="grc tail"
   alias logh="grc head"
-}
+fi
