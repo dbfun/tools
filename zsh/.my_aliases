@@ -15,11 +15,11 @@ function mygrep { grep -rnIi "$1" . --color --include '*.php'; }
 alias ic='iconv -f cp1251 -t utf-8'
 
 # разукрашиваем некоторые команды с помощью grc
-[[ -f /usr/bin/grc ]] && {
+if type "grc" > /dev/null; then
   alias ping="grc --colour=auto ping"
   alias traceroute="grc --colour=auto traceroute"
   alias make="grc --colour=auto make"
   alias diff="grc --colour=auto diff"
   alias netstat="grc --colour=auto netstat"
   alias dig="grc --colour=auto dig"
-}
+fi
