@@ -92,7 +92,7 @@ if [ "$TYPE" == "sshfs" ]; then
 
             prepareMount
 
-            sshfs -o reconnect -o idmap=user -o uid=$_UID -o gid=$_GID -o allow_other -o default_permissions "$SSH_SERVER_STR" $PROJECT_MNT_PATH
+            sshfs -o allow_other,reconnect,cache_timeout=5,ServerAliveInterval=15,ServerAliveCountMax=3 "$SSH_SERVER_STR" $PROJECT_MNT_PATH
               if [ 0 != "$?" ]; then
                 echo 'Error'
                 rmdir $PROJECT_MNT_PATH
@@ -116,7 +116,7 @@ elif [ "$TYPE" == "mount.cifs" ]; then
 
             prepareMount
 
-            /sbin/mount.cifs -o reconnect -o uid=$_UID -o gid=$_GID -o allow_other -o iocharset=utf8 ${SSH_SERVER_STR/VAR_MOUNTPOINT/$PROJECT_MNT_PATH}
+            /sbin/mount.cifs -o allow_other,reconnect,ServerAliveInterval=15,ServerAliveCountMax=3,iocharset=utf8 ${SSH_SERVER_STR/VAR_MOUNTPOINT/$PROJECT_MNT_PATH}
             if [ 0 != "$?" ]; then
               echo 'Error'
               rmdir $PROJECT_MNT_PATH
