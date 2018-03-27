@@ -10,6 +10,9 @@ alias g=git
 # grep
 function mygrep { grep -rnIi "$1" . --color --include '*.php'; }
 
+# grep cp1251 => utf-8
+function mygrep1251 { grep -rnI "`echo "$@"|iconv -t cp1251`" . --include '*.php' | iconv -f cp1251 }
+
 # iconv
 
 alias ic='iconv -f cp1251 -t utf-8'
