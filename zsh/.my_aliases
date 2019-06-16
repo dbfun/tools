@@ -7,14 +7,16 @@ alias tmux='tmux attach || tmux new'
 # git
 alias g=git
 
-alias node=nodejs
-
 # grep
 function mygrep { grep -rnIi "$1" . --color --include '*.php'; }
 
 # iconv
 
 alias ic='iconv -f cp1251 -t utf-8'
+
+# grep
+
+alias grep='grep  --color=auto --exclude-dir={.bzr,CVS,.git,.hg,.svn,node_modules}'
 
 # разукрашиваем некоторые команды с помощью grc
 [[ -f /usr/bin/grc ]] && {
