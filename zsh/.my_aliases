@@ -10,6 +10,9 @@ alias g=git
 # grep
 function mygrep { grep -rnIi "$1" . --color --include '*.php'; }
 
+# grep cp1251 => utf-8
+function mygrep1251 { grep -rnI "`echo "$@"|iconv -t cp1251`" . --include '*.php' | iconv -f cp1251 }
+
 # iconv
 
 alias ic='iconv -f cp1251 -t utf-8'
@@ -19,11 +22,11 @@ alias ic='iconv -f cp1251 -t utf-8'
 alias grep='grep  --color=auto --exclude-dir={.bzr,CVS,.git,.hg,.svn,node_modules}'
 
 # разукрашиваем некоторые команды с помощью grc
-[[ -f /usr/bin/grc ]] && {
+if type "grc" > /dev/null; then
   alias ping="grc --colour=auto ping"
   alias traceroute="grc --colour=auto traceroute"
   alias make="grc --colour=auto make"
   alias diff="grc --colour=auto diff"
   alias netstat="grc --colour=auto netstat"
   alias dig="grc --colour=auto dig"
-}
+fi
